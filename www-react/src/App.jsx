@@ -1,52 +1,51 @@
-import { useState } from 'react'
-import logo from './logo.svg'
-import './App.css'
-import init, { greet } from 'rust-program';
-
-init().then(() => {
-  console.log('init wasm-pack');
-  greet('from vite!');
-});
-
+import { useEffect, useRef, useState } from "react";
+import "./App.css";
+import init, { WasmSudoku } from "rust-program";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [sudokuBoard, setSudokuBoard] = useState(
+    "5....91679..6..2....7.....3.....89...8..3..5...92.....6.....7....4..1..91324....5"
+  );
+  const sudoku = useRef(null);
+  useEffect(() => {
+    init().then(() => {
+      if (sudoku.current) {
+        return;
+      }
+      const wasmSudoku = WasmSudoku.new();
+      setSudokuBoard(wasmSudoku.get_board());
+      sudoku.current = wasmSudoku;
+    });
+  }, []);
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>Hello Vite + React! + Rust WASM</p>
-        <p>
-          <button type="button" onClick={() => setCount((count) => count + 1)}>
-            count is: {count}
+        <h1>Sudoku Solver</h1>
+        <div>
+          <input
+            type="text"
+            value={sudokuBoard}
+            onChange={(e) => setSudokuBoard(e.target.value)}
+          />
+          <button
+            onClick={() => {
+              if (sudoku.current) {
+                sudoku.current.set_board(sudokuBoard);
+                const solution = sudoku.current.solve();
+                setSudokuBoard(solution);
+              }
+            }}
+          >
+            Solve
           </button>
-        </p>
-        <p>
-          Edit <code>App.jsx</code> and save to test HMR updates.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-          {' | '}
-          <a
-            className="App-link"
-            href="https://vitejs.dev/guide/features.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Vite Docs
-          </a>
-        </p>
+        </div>
+        <div>
+          <p>{sudokuBoard}</p>
+        </div>
       </header>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
